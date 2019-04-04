@@ -74,7 +74,7 @@ public class ConsumeQueue {
             );
         }
     }
-
+    //consumer queue文件加载
     public boolean load() {
         boolean result = this.mappedFileQueue.load();
         log.info("load consume queue " + this.topic + "-" + this.queueId + " " + (result ? "OK" : "Failed"));

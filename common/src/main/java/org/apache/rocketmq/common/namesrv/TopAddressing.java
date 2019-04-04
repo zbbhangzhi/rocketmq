@@ -33,6 +33,7 @@ public class TopAddressing {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
     private String nsAddr;
+    //自己组长的访问namesrv的url
     private String wsAddr;
     private String unitName;
 

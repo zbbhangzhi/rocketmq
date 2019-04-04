@@ -101,8 +101,9 @@ public class ScheduleMessageService extends ConfigManager {
         return storeTimestamp + 1000;
     }
 
+    //todo 延迟消息
     public void start() {
-
+        //循环建立定时任务 根据延迟等级 发送延迟消息
         for (Map.Entry<Integer, Long> entry : this.delayLevelTable.entrySet()) {
             Integer level = entry.getKey();
             Long timeDelay = entry.getValue();

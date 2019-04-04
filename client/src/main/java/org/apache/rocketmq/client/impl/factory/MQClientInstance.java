@@ -227,6 +227,8 @@ public class MQClientInstance {
                 case CREATE_JUST:
                     this.serviceState = ServiceState.START_FAILED;
                     // If not specified,looking address from name server
+                    //todo 这里通过访问url获取namesrv地址 这里的url组装是依据什么
+                    //没有声明就主动获取namesrv地址
                     if (null == this.clientConfig.getNamesrvAddr()) {
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
@@ -239,6 +241,7 @@ public class MQClientInstance {
                     // Start rebalance service
                     this.rebalanceService.start();
                     // Start push service
+                    //todo producer和push有什么关系
                     this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
                     log.info("the client factory [{}] start OK", this.clientId);
                     this.serviceState = ServiceState.RUNNING;
@@ -425,10 +428,12 @@ public class MQClientInstance {
                 }
                 // may need to check one broker every cluster...
                 // assume that the configs of every broker in cluster are the the same.
+                //订阅的topic消息存储的broker地址
                 String addr = findBrokerAddrByTopic(subscriptionData.getTopic());
 
                 if (addr != null) {
                     try {
+                        //todo 检查broker配置
                         this.getMQClientAPIImpl().checkClientInBroker(
                             addr, entry.getKey(), this.clientId, subscriptionData, 3 * 1000
                         );
@@ -591,6 +596,7 @@ public class MQClientInstance {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     TopicRouteData topicRouteData;
+                    //todo 这里是默认topic的路由信息 获取有什么用
                     if (isDefault && defaultMQProducer != null) {
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(defaultMQProducer.getCreateTopicKey(),
                             1000 * 3);
@@ -607,7 +613,9 @@ public class MQClientInstance {
                     if (topicRouteData != null) {
                         TopicRouteData old = this.topicRouteTable.get(topic);
                         boolean changed = topicRouteDataIsChange(old, topicRouteData);
+                        //老旧一致
                         if (!changed) {
+                            //todo 为什么更新producer和consumer的topic路由信息 不是都向namesrv获取吗
                             changed = this.isNeedUpdateTopicRouteInfo(topic);
                         } else {
                             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);

@@ -78,6 +78,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private String consumerGroup;
 
     /**
+     * 消息传送到消费端的模型：集群或者广播
      * Message model defines the way how messages are delivered to each consumer clients.
      * </p>
      *
@@ -92,6 +93,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private MessageModel messageModel = MessageModel.CLUSTERING;
 
     /**
+     * 消费引导位置 比如从第一个偏移位置开始消费
      * Consuming point on consumer booting.
      * </p>
      *
@@ -133,26 +135,31 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private String consumeTimestamp = UtilAll.timeMillisToHumanString3(System.currentTimeMillis() - (1000 * 60 * 30));
 
     /**
+     * 分配消息给消费者的分配策略
      * Queue allocation algorithm specifying how message queues are allocated to each consumer clients.
      */
     private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
 
     /**
+     * 订阅topic的过滤表达式集合
      * Subscription relationship
      */
     private Map<String /* topic */, String /* sub expression */> subscription = new HashMap<String, String>();
 
     /**
+     * 异步接收消息的监听器
      * Message listener
      */
     private MessageListener messageListener;
 
     /**
+     * 消息消费的偏移量存储器
      * Offset Storage
      */
     private OffsetStore offsetStore;
 
     /**
+     * 消费线程数
      * Minimum consumer thread number
      */
     private int consumeThreadMin = 20;
@@ -163,16 +170,19 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private int consumeThreadMax = 64;
 
     /**
+     * 动态调整线程池阈值
      * Threshold for dynamic adjustment of the number of thread pool
      */
     private long adjustThreadPoolNumsThreshold = 100000;
 
     /**
+     * 同步消费时最大跨度 对顺序消费不起作用 todo
      * Concurrently max span offset.it has no effect on sequential consumption
      */
     private int consumeConcurrentlyMaxSpan = 2000;
 
     /**
+     * 消息队列默认缓存消息数量阈值
      * Flow control threshold on queue level, each message queue will cache at most 1000 messages by default,
      * Consider the {@code pullBatchSize}, the instantaneous value may exceed the limit
      */
@@ -293,6 +303,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.consumerGroup = consumerGroup;
         this.allocateMessageQueueStrategy = allocateMessageQueueStrategy;
         defaultMQPushConsumerImpl = new DefaultMQPushConsumerImpl(this, rpcHook);
+        //允许消息跟踪 自定义跟踪topic todo
         if (enableMsgTrace) {
             try {
                 AsyncTraceDispatcher dispatcher = new AsyncTraceDispatcher(customizedTraceTopic, rpcHook);
@@ -392,6 +403,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     public MessageExt viewMessage(String topic,
         String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         try {
+            //解码msgId获得消息来源地址和所处偏移量 todo msgId结构
             MessageDecoder.decodeMessageId(msgId);
             return this.viewMessage(msgId);
         } catch (Exception e) {
@@ -532,7 +544,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.subscription = subscription;
     }
 
-    /**
+    /** todo 为什么要把消息重新发回去
      * Send message back to broker which will be re-delivered in future.
      *
      * @param msg Message to send back.

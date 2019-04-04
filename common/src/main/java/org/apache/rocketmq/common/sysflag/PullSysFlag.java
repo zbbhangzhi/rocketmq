@@ -17,9 +17,13 @@
 package org.apache.rocketmq.common.sysflag;
 
 public class PullSysFlag {
+    //标记请求提交消费进度位置
     private final static int FLAG_COMMIT_OFFSET = 0x1 << 0;
+    //标记请求是否挂起请求，当拉取不到消息，broker在一定时间suspendedTimeoutMills内会挂起请求
     private final static int FLAG_SUSPEND = 0x1 << 1;
+    //是否过滤订阅表达式 与subscription连用
     private final static int FLAG_SUBSCRIPTION = 0x1 << 2;
+    //订阅版本号 请求时版本号如果与其不一致 则重新获取版本号
     private final static int FLAG_CLASS_FILTER = 0x1 << 3;
 
     public static int buildSysFlag(final boolean commitOffset, final boolean suspend,

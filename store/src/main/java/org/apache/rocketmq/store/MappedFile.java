@@ -57,11 +57,13 @@ public class MappedFile extends ReferenceResource {
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
      */
+    //内存字节缓冲区
     protected ByteBuffer writeBuffer = null;
     protected TransientStorePool transientStorePool = null;
     private String fileName;
     private long fileFromOffset;
     private File file;
+    //文件在内存中的映射
     private MappedByteBuffer mappedByteBuffer;
     private volatile long storeTimestamp = 0;
     private boolean firstCreateInQueue = false;
@@ -205,6 +207,10 @@ public class MappedFile extends ReferenceResource {
         int currentPos = this.wrotePosition.get();
 
         if (currentPos < this.fileSize) {
+            //todo
+            //数据落盘两种方式
+            //1. 直接将数据写到映射文件字节缓冲区mappedByteBuffer，后mappedByteBuffer.flush()
+            //2. 先写到内存字节缓冲区writeBuffer，再从writeBuffer提交commit到文件通道FileChannel，后FileChannel.flush()
             ByteBuffer byteBuffer = writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();
             byteBuffer.position(currentPos);
             AppendMessageResult result = null;
@@ -301,9 +307,13 @@ public class MappedFile extends ReferenceResource {
             //no need to commit data to file channel, so just regard wrotePosition as committedPosition.
             return this.wrotePosition.get();
         }
+        //可以刷盘
         if (this.isAbleToCommit(commitLeastPages)) {
+            //当前映射文件没有被关闭 可以操作
             if (this.hold()) {
+                //内存缓冲器内存写入文件
                 commit0(commitLeastPages);
+                //释放文件
                 this.release();
             } else {
                 log.warn("in commit, hold failed, commit offset = " + this.committedPosition.get());
@@ -318,7 +328,7 @@ public class MappedFile extends ReferenceResource {
 
         return this.committedPosition.get();
     }
-
+    //将当前映射文件内存缓冲区中的内容通过fileChannel写入文件
     protected void commit0(final int commitLeastPages) {
         int writePos = this.wrotePosition.get();
         int lastCommittedPosition = this.committedPosition.get();
@@ -351,7 +361,7 @@ public class MappedFile extends ReferenceResource {
 
         return write > flush;
     }
-
+    //写入页数大于刷盘页数 则说明还有没有刷盘的
     protected boolean isAbleToCommit(final int commitLeastPages) {
         int flush = this.committedPosition.get();
         int write = this.wrotePosition.get();
@@ -359,7 +369,7 @@ public class MappedFile extends ReferenceResource {
         if (this.isFull()) {
             return true;
         }
-
+        //判断剩余写入但未被刷盘的页数是否大于等于要刷盘的页数
         if (commitLeastPages > 0) {
             return ((write / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE)) >= commitLeastPages;
         }
@@ -402,6 +412,7 @@ public class MappedFile extends ReferenceResource {
     }
 
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
+        //最新已被刷盘位置
         int readPosition = getReadPosition();
         if (pos < readPosition && pos >= 0) {
             if (this.hold()) {

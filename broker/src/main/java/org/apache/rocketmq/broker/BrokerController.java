@@ -459,7 +459,7 @@ public class BrokerController {
                                     reloadServerSslContext();
                                 }
                             }
-
+                            //todo 探究和netty的关系
                             private void reloadServerSslContext() {
                                 ((NettyRemotingServer) remotingServer).loadSslContext();
                                 ((NettyRemotingServer) fastRemotingServer).loadSslContext();

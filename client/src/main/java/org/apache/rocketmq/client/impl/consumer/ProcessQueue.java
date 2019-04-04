@@ -130,6 +130,8 @@ public class ProcessQueue {
             try {
                 int validMsgCnt = 0;
                 for (MessageExt msg : msgs) {
+                    //将消息放入treemap
+                    //todo 为什么用treemap
                     MessageExt old = msgTreeMap.put(msg.getQueueOffset(), msg);
                     if (null == old) {
                         validMsgCnt++;
@@ -145,6 +147,7 @@ public class ProcessQueue {
                 }
 
                 if (!msgs.isEmpty()) {
+                    //拿到最后一个消息 计算消息队列实际大小
                     MessageExt messageExt = msgs.get(msgs.size() - 1);
                     String property = messageExt.getProperty(MessageConst.PROPERTY_MAX_OFFSET);
                     if (property != null) {
@@ -302,6 +305,7 @@ public class ProcessQueue {
             this.lockTreeMap.writeLock().lockInterruptibly();
             this.lastConsumeTimestamp = now;
             try {
+                //从treeMap中拿出消息
                 if (!this.msgTreeMap.isEmpty()) {
                     for (int i = 0; i < batchSize; i++) {
                         Map.Entry<Long, MessageExt> entry = this.msgTreeMap.pollFirstEntry();

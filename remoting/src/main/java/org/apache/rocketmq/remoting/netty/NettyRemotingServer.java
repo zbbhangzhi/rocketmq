@@ -201,7 +201,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                     public void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline()
                             .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME,
-                                new HandshakeHandler(TlsSystemConfig.tlsMode))
+                                new HandshakeHandler(TlsSystemConfig.tlsMode))//todo
                             .addLast(defaultEventExecutorGroup,
                                 new NettyEncoder(),
                                 new NettyDecoder(),

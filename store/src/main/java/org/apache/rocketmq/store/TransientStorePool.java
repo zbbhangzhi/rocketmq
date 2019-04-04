@@ -33,6 +33,7 @@ public class TransientStorePool {
 
     private final int poolSize;
     private final int fileSize;
+    //缓冲区的双向队列
     private final Deque<ByteBuffer> availableBuffers;
     private final MessageStoreConfig storeConfig;
 

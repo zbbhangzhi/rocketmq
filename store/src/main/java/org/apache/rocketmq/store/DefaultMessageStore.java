@@ -163,6 +163,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     /**
+     * 加载映射文件和消费信息文件
      * @throws IOException
      */
     public boolean load() {
@@ -216,25 +217,31 @@ public class DefaultMessageStore implements MessageStore {
 
         lockFile.getChannel().write(ByteBuffer.wrap("lock".getBytes()));
         lockFile.getChannel().force(true);
-
+        //开启异步consumer queue 刷盘线程 当接入消息时 异步循环处理刷盘请求队列中的任务
         this.flushConsumeQueueService.start();
+        //开启异步刷盘线程
         this.commitLog.start();
+        //监控线程
         this.storeStatsService.start();
 
+        //todo 延迟消息
         if (this.scheduleMessageService != null && SLAVE != messageStoreConfig.getBrokerRole()) {
             this.scheduleMessageService.start();
         }
 
+        //todo 消息重入
         if (this.getMessageStoreConfig().isDuplicationEnable()) {
             this.reputMessageService.setReputFromOffset(this.commitLog.getConfirmOffset());
         } else {
             this.reputMessageService.setReputFromOffset(this.commitLog.getMaxOffset());
         }
-        this.reputMessageService.start();
 
+        this.reputMessageService.start();
+        //todo 中心线程
         this.haService.start();
 
         this.createTempFile();
+        //todo 什么定时任务
         this.addScheduleTask();
         this.shutdown = false;
     }
@@ -307,7 +314,7 @@ public class DefaultMessageStore implements MessageStore {
             log.warn("message store has shutdown, so putMessage is forbidden");
             return new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null);
         }
-
+        //slaver模式下不可以存储消息
         if (BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole()) {
             long value = this.printTimes.getAndIncrement();
             if ((value % 50000) == 0) {
@@ -337,7 +344,7 @@ public class DefaultMessageStore implements MessageStore {
             log.warn("putMessage message properties length too long " + msg.getPropertiesString().length());
             return new PutMessageResult(PutMessageStatus.PROPERTIES_SIZE_EXCEEDED, null);
         }
-
+        //磁盘是否繁忙 是就不能写入消息 再等等
         if (this.isOSPageCacheBusy()) {
             return new PutMessageResult(PutMessageStatus.OS_PAGECACHE_BUSY, null);
         }
@@ -416,9 +423,10 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public boolean isOSPageCacheBusy() {
+        //最新的commitLog写入消息时间
         long begin = this.getCommitLog().getBeginTimeInLock();
         long diff = this.systemClock.now() - begin;
-
+        //说明还在磁盘还在写入消息
         return diff < 10000000
                 && diff > this.messageStoreConfig.getOsPageCacheBusyTimeOutMills();
     }
@@ -459,12 +467,12 @@ public class DefaultMessageStore implements MessageStore {
         GetMessageResult getResult = new GetMessageResult();
 
         final long maxOffsetPy = this.commitLog.getMaxOffset();
-
         ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
         if (consumeQueue != null) {
+            //获取最值队列编号
             minOffset = consumeQueue.getMinOffsetInQueue();
             maxOffset = consumeQueue.getMaxOffsetInQueue();
-
+            //判断查找位置offset是否在队列之中
             if (maxOffset == 0) {
                 status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
                 nextBeginOffset = nextOffsetCorrection(offset, 0);
@@ -482,6 +490,7 @@ public class DefaultMessageStore implements MessageStore {
                     nextBeginOffset = nextOffsetCorrection(offset, maxOffset);
                 }
             } else {
+                //根据偏移位置获取映射文件中从偏移位置开始的可读数据
                 SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
                 if (bufferConsumeQueue != null) {
                     try {
@@ -1237,9 +1246,10 @@ public class DefaultMessageStore implements MessageStore {
         File file = new File(fileName);
         return file.exists();
     }
-
+    //加载所有topic下的consumer queue文件
     private boolean loadConsumeQueue() {
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()));
+        //consumer queue在系统中存储以 topic名称为文件夹名 内部有队列名称为单个文件夹组成
         File[] fileTopicList = dirLogic.listFiles();
         if (fileTopicList != null) {
 
