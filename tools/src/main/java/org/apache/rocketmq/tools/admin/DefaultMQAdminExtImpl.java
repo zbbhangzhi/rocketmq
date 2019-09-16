@@ -778,6 +778,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                 case CONSUME_PASSIVELY:
                     boolean ifConsumed = false;
                     try {
+                        //根据比较偏移量判断消息是否被消费过
                         ifConsumed = this.consumed(msg, group);
                     } catch (MQClientException e) {
                         if (ResponseCode.CONSUMER_NOT_ONLINE == e.getResponseCode()) {
@@ -809,6 +810,8 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                                     || next.getValue().getTagsSet().contains("*")
                                     || next.getValue().getTagsSet().isEmpty()) {
                                 } else {
+                                    //todo 既然被过滤那怎么会被消费 查看消费代码
+                                    // 这个tag不在这个topic内
                                     mt.setTrackType(TrackType.CONSUMED_BUT_FILTERED);
                                 }
                             }

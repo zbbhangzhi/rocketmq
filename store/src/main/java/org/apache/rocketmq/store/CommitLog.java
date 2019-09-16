@@ -718,7 +718,7 @@ public class CommitLog {
         MappedFile unlockMappedFile = null;
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
 
-        //fine-grained lock instead of the coarse-grained
+        //fine-grained lock instead of the coarse-grained 为什么编码消息需要用到threadLocal保证共享变量的隔离
         MessageExtBatchEncoder batchEncoder = batchEncoderThreadLocal.get();
 
         messageExtBatch.setEncodedBuff(batchEncoder.encode(messageExtBatch));
